@@ -2,7 +2,7 @@ import csv
 import numpy as np
 from PIL import Image
 
-rootPath = 'C:\\KingJoySaiy\\workspace\\genderClassification\\jiangnan2020_Simple\\'
+rootPath = 'D:\\KingJoySaiy\\workspace\\genderClassification\\jiangnan2020_Simple\\'
 
 # Train: [1.jpg, 18000.jpg], csv: {id -> label}
 trainCSV = rootPath + 'train.csv'
@@ -19,11 +19,11 @@ imageH = 200
 def readImage(path):
     img = Image.open(path)
     pix = img.load()
-    dataX = np.zeros((imageH * imageW, 1), dtype=np.double)
+    dataX = np.zeros((imageH, imageW, 1), dtype=np.float)
     for x in range(imageH):
         for y in range(imageW):
             r, g, b = pix[y, x]
-            dataX[x * imageH + y] = (r + g + b) / 3
+            dataX[x, y, 0] = (r + g + b) // 3
     return dataX
 
 
@@ -40,9 +40,6 @@ def getTrainData():
     idData = dict()
     for i in idLabel.keys():
         idData[i] = readImage(trainImage + str(i) + '.jpg')
-        if i <= 10:
-            print(idData[i], idLabel[i])
-    print(len(idData))
     return idData, idLabel
 
 
@@ -59,6 +56,4 @@ def getTestData():
     idData = dict()
     for i in testId:
         idData[i] = readImage(testImage + str(i) + '.jpg')
-        # print(idData[i])
-    # print(len(idData))
     return idData
