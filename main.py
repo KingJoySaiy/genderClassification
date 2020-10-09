@@ -1,41 +1,69 @@
+from __future__ import print_function
+from readFile import getTrainData, getTestData
+
 import tensorflow as tf
-from tensorflow import keras
+# import tensorflow.compat.v1 as tf
+import data
 import readFile
-from readFile import imageH, imageW
 
-# dictionary {id -> data}, {id -> label}
-idData, idLabel = readFile.getTrainData()
-idDataTest = readFile.getTestData()
 
-my_callbacks = [tf.keras.callbacks.EarlyStopping(patience=3, min_delta=0, monitor='val_loss')]
+# print(tf.__version__)
 
-model = keras.Sequential([
-    keras.layers.Conv2D(32, (3, 3), input_shape=(imageW, imageH, 1), strides=(1, 1), activation='relu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Conv2D(64, (3, 3), strides=(1, 1), activation='relu'),
-    keras.layers.MaxPool2D(pool_size=(2, 2)),
-    keras.layers.Flatten(),
-    keras.layers.Dense(128, activation=tf.nn.relu),
-    keras.layers.Dropout(0.2),
-    keras.layers.Dense(2, activation=tf.nn.softmax)
-])
+# Import MNIST data(下载数据)
+# from tensorflow.examples.tutorials.mnist import input_data
 
-model.compile(optimizer=tf.train.AdamOptimizer(learning_rate=0.001),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
+# mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
+data = data.Data()
 
-model.summary()
+# 参数：学习率，训练次数，
+learning_rate = 0.01
+training_epochs = 25
+batch_size = 100
+display_step = 1
 
-model.fit(x=idData.values(),
-          y=idLabel.values(),
-          batch_size=32,
-          epochs=30,
-          verbose=1,
-          callbacks=my_callbacks,
-          validation_split=0.05,
-          shuffle=True
-          )
+# tf Graph Input
+x = tf.placeholder(tf.float32, [None, 40000])  # mnist data image of shape 28*28=784
+y = tf.placeholder(tf.int32, [None, 1])  # 0-9 digits recognition => 10 classes
 
-predictions = model.predict(idDataTest.values())
+# Set model weights
+W = tf.Variable(tf.zeros([40000, 1]))
+b = tf.Variable(tf.zeros([1]))
 
-print(predictions)
+# softmax模型
+pred = tf.nn.softmax(tf.matmul(x, W) + b)  # Softmax
+
+# Minimize error using cross entropy（损失函数用cross entropy）
+cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
+# Gradient Descent（梯度下降优化）
+optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+
+# Initializing the variables
+init = tf.global_variables_initializer()
+
+# Launch the graph
+with tf.Session() as sess:
+    sess.run(init)
+
+    # Training cycle
+    for epoch in range(training_epochs):
+        avg_cost = 0.
+        total_batch = int(data.getTrainSize() / batch_size)
+        # Loop over all batches
+        for i in range(total_batch):
+            batch_xs, batch_ys = data.nextTrainBatch()
+            # Run optimization op (backprop) and cost op (to get loss value)
+            _, c = sess.run([optimizer, cost], feed_dict={x: batch_xs,
+                                                          y: batch_ys})
+            # Compute average loss
+            avg_cost += c / total_batch
+        # Display logs per epoch step
+        if (epoch + 1) % display_step == 0:
+            print("Epoch:", '%04d' % (epoch + 1), "cost=", "{:.9f}".format(avg_cost))
+
+    print("Optimization Finished!")
+
+    # Test model
+    correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+    # Calculate accuracy
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    print("Accuracy:", accuracy.eval({x: readFile.getTrainData()[0].values(), y: readFile.getTrainData()[1].values()}))
