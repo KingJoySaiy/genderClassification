@@ -1,33 +1,65 @@
-# linear regression(1 dimension) using tensorflow
+'''
+A linear regression learning algorithm example using TensorFlow library.
+Author: Aymeric Damien
+Project: https://github.com/aymericdamien/TensorFlow-Examples/
+'''
 
-import numpy as np
-import tensorflow as tf
+from __future__ import print_function
 
-# training data
-xTrain = [1, 2, 3, 6, 8]
-yTrain = [4.8, 8.5, 10.4, 21, 25.3]
+import numpy
+import tensorflow.compat.v1 as tf
 
-# parameter
-W = tf.Variable([np.random.rand()], dtype=tf.float32)
-b = tf.Variable([np.random.rand()], dtype=tf.float32)
-x = tf.placeholder(tf.float32)
-y = tf.placeholder(tf.float32)
+tf.disable_v2_behavior()
 
-# predict & loss function
-predict = W * x + b
-loss = tf.reduce_sum(tf.square(predict - y))
+rng = numpy.random
 
-# new process
-sess = tf.Session()
-sess.run(tf.global_variables_initializer())  # need to initialize
+# Parameters
+learning_rate = 0.01
+training_epochs = 1000
+display_step = 50
 
-# print(sess.run(predict, {x: dataX}))
-# print(sess.run(loss, {x: dataX, y: dataY}))
+# Training Data
+train_X = numpy.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+# train_X = numpy.asarray([3.3, 4.4, 5.5])
+train_Y = numpy.asarray([1.7, 2.76, 2.09])
+n_samples = train_X.shape[0]
 
-# gradient optimizer (learning rate == 0.001)
-optimizer = tf.train.GradientDescentOptimizer(0.001)
-train = optimizer.minimize(loss)
+# tf Graph Input
+X = tf.placeholder("float", shape=(3, 3))
+Y = tf.placeholder("float")
 
-for i in range(10000):
-    sess.run(train, {x: xTrain, y: yTrain})
-print('W: %s b: %s loss: %s' % (sess.run(W), sess.run(b), sess.run(loss, {x: xTrain, y: yTrain})))
+# Set model weights
+W = tf.Variable(numpy.random.randn(3), name="weight")
+b = tf.Variable(rng.randn(), name="bias")
+
+# Construct a linear model
+pred = tf.add(tf.multiply(X, W), b)
+# (3, 1)
+
+# Mean squared error
+cost = tf.reduce_sum(tf.pow(pred - Y, 2)) / (2 * n_samples)
+# Gradient descent
+#  Note, minimize() knows to modify W and b because Variable objects are trainable=True by default
+optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+
+# Initialize the variables (i.e. assign their default value)
+init = tf.global_variables_initializer()
+
+# Start training
+with tf.Session() as sess:
+    # Run the initializer
+    sess.run(init)
+
+    # Fit all training data
+    for epoch in range(training_epochs):
+        for (x, y) in zip(train_X, train_Y):
+            sess.run(optimizer, feed_dict={X: x, Y: y})
+
+        # Display logs per epoch step
+        if (epoch + 1) % display_step == 0:
+            c = sess.run(cost, feed_dict={X: train_X, Y: train_Y})
+            print("Epoch:", '%04d' % (epoch + 1), "cost=", "{:.9f}".format(c), \
+                  "W=", sess.run(W), "b=", sess.run(b))
+
+    training_cost = sess.run(cost, feed_dict={X: train_X, Y: train_Y})
+    print("Training cost=", training_cost, "W=", sess.run(W), "b=", sess.run(b), '\n')

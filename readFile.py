@@ -1,8 +1,8 @@
 import csv
 import numpy as np
-from PIL import Image
+from matplotlib import image
 
-rootPath = 'D:\\KingJoySaiy\\workspace\\genderClassification\\jiangnan2020_Simple\\'
+rootPath = 'C:\\KingJoySaiy\\workspace\\genderClassification\\jiangnan2020_Too_Simple\\'
 
 # Train: [1.jpg, 18000.jpg], csv: {id -> label}
 trainCSV = rootPath + 'train.csv'
@@ -16,34 +16,32 @@ imageW = 200
 imageH = 200
 
 
+# read image numpy.ndarray(200, 200, 3)
 def readImage(path):
-    img = Image.open(path)
-    pix = img.load()
-    dataX = np.zeros((imageH, imageW, 1), dtype=np.float)
-    for x in range(imageH):
-        for y in range(imageW):
-            r, g, b = pix[y, x]
-            dataX[x, y, 0] = (r + g + b) // 3
-    return dataX
+    im = image.imread(path)
+    # print(type(im))
+    return im
 
 
-# idData, idLabel: image(200 * 200) & label of each trainImage
+# Data, Label: image(200 * 200) & label of each trainImage
 def getTrainData():
     # get directory of training label {id -> label}
     idLabel = dict()
     reader = csv.reader(open(trainCSV, 'r'))
     next(reader)
     for row in reader:
-        idLabel[int(row[0])] = row[1]
+        idLabel[int(row[0])] = int(row[1])
 
-    # get directory of training image {id -> matrix}
-    idData = dict()
+    # get list of training image
+    data = np.zeros(len(idLabel), 1)
+    ct = 0
     for i in idLabel.keys():
-        idData[i] = readImage(trainImage + str(i) + '.jpg')
-    return idData, idLabel
+        data[ct, 0] = readImage(trainImage + str(i) + '.jpg')
+        ct += 1
+    return data, list(idLabel.values())
 
 
-# idData: image(200 * 200) of each testImage
+# Data: image(200 * 200) of each testImage
 def getTestData():
     # get list of test {Id}
     testId = []
@@ -53,7 +51,9 @@ def getTestData():
         testId.append(int(row[0]))
 
     # get directory of training image {id -> matrix}
-    idData = dict()
+    data = np.zeros(len(testId), 1)
+    ct = 0
     for i in testId:
-        idData[i] = readImage(testImage + str(i) + '.jpg')
-    return idData
+        data[ct, 0] = readImage(testImage + str(i) + '.jpg')
+        ct += 1
+    return data
