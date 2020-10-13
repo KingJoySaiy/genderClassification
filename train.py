@@ -1,13 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import readFile
-from readFile import imageSize
-
-modelPath = 'model\\LR.pkl'  # for windows
-# modelPath = 'model/LR'  # for linux
-data = readFile.getTrainData()
-trainSize = 900
+from constant.readFile import imageSize, getTrainData
+from constant.constPath import trainSize, modelPath
 
 
 class LR(nn.Module):
@@ -27,6 +22,7 @@ def test(pred, lab):
 
 
 def startTrain():
+    data = getTrainData()
     # 18000, 40001
     n, l = data.shape
 
@@ -47,7 +43,7 @@ def startTrain():
     net = torch.load(modelPath)
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
     optm = torch.optim.Adam(net.parameters())  # Adam优化
-    epochs = 50  # 训练1000次
+    epochs = 200  # 训练1000次
 
     for i in range(epochs):
         # 指定模型为训练模式，计算梯度
@@ -61,7 +57,7 @@ def startTrain():
         loss.backward()  # 反向传播
         optm.step()  # 优化
 
-        if (i + 1) % 1 == 0:  # 这里我们每100次输出相关的信息
+        if (i + 1) % 10 == 0:  # 这里我们每100次输出相关的信息
             # 指定模型为计算模式
             net.eval()
             test_in = torch.from_numpy(test_data).float()
