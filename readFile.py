@@ -2,18 +2,18 @@ import csv
 import numpy as np
 from matplotlib import image
 
-# rootPath = 'jiangnan2020_Simple\\'  # for windows
-rootPath = 'jiangnan2020/'  # for linux
+rootPath = 'jiangnan2020_Simple\\'  # for windows
+# rootPath = 'jiangnan2020/'  # for linux
 
 # Train: [1.jpg, 18000.jpg], csv: {id -> label}
 trainCSV = rootPath + 'train.csv'
-# trainImage = rootPath + 'train\\train\\'  # for window
-trainImage = rootPath + 'train/train/'  # for linux
+trainImage = rootPath + 'train\\train\\'  # for window
+# trainImage = rootPath + 'train/train/'  # for linux
 
 # test: [18001.jpg, 23708.jpg], csv: {id}
 testCSV = rootPath + 'test.csv'
-testImage = rootPath + 'test\\test\\'   # for windows
-# testImage = rootPath + 'test/test/'   # for linux
+# testImage = rootPath + 'test\\test\\'   # for windows
+testImage = rootPath + 'test/test/'   # for linux
 
 imageW = 200
 imageH = 200
@@ -46,7 +46,7 @@ def getTrainData():
     return np.hstack((data, np.array(label).reshape(len(label), 1)))
 
 
-# testing data(testSize, 200*200)
+# testing data(testSize, 200*200 + 1)
 def getTestData():
     # get testing id
     testId = []
