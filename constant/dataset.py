@@ -5,8 +5,13 @@ from matplotlib import image
 from constant.constPath import imageH, imageW, trainCSV, testCSV, trainImage, testImage
 import torch
 
+ct = 0
+
 
 def readImage(path):
+    global ct
+    print(ct)
+    ct += 1
     im = image.imread(path)  # (200, 200, 3)
     return np.mean(im, axis=2).reshape((1, imageH, imageW))  # (1, 200, 200)
 
@@ -47,27 +52,3 @@ def getPredictData():
         data[ct] = readImage(testImage + str(i) + '.jpg')
         ct += 1
     return data, np.array(testId).reshape(len(testId), 1)
-
-
-class MyDataSet(Dataset):
-    def __init__(self, isTrain, trainSize, transform=None):
-        self.transform = transform
-        self.isTrain = isTrain
-        tmpX, tmpY = getTrainData()
-        tmpX, tmpY = torch.from_numpy(tmpX[:trainSize]).double(), torch.from_numpy(tmpY[:trainSize]).long()
-        self.trainData, self.label = tmpX[:trainSize], tmpY[:trainSize]
-        self.testData, self.testLabel = tmpX[trainSize:], tmpY[trainSize:]
-        # self.trainData, self.label = torch.from_numpy(tmpX[:trainSize]).double(), torch.from_numpy(
-        #     tmpY[:trainSize]).long()
-        # self.testData, self.testLabel = torch.from_numpy(tmpX[trainSize:]).double(), torch.from_numpy(
-        #     tmpY[trainSize:]).long()
-
-    def __getitem__(self, index):
-        if self.isTrain:
-            return self.trainData[index], int(self.label[index])
-        return self.testData[index], int(self.testLabel[index])
-
-    def __len__(self):
-        if self.isTrain:
-            return len(self.trainData)
-        return len(self.testData)

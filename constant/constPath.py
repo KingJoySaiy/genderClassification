@@ -2,7 +2,7 @@
 rootPath = 'jiangnan2020_Simple\\'
 trainImage = rootPath + 'train\\train\\'
 testImage = rootPath + 'test\\test\\'
-modelPath = 'model\\LR.pkl'
+modelPath = 'model\\CNN.pkl'
 trainSize = 900
 predictSize = 100
 
@@ -10,7 +10,7 @@ predictSize = 100
 # rootPath = 'jiangnan2020/'
 # trainImage = rootPath + 'train/train/'
 # testImage = rootPath + 'test/test/'
-# modelPath = 'model/LR.pkl'
+# modelPath = 'model/CNN.pkl'
 # trainSize = 15000
 # predictSize = 5708
 
