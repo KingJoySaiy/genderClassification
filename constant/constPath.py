@@ -20,4 +20,4 @@ submitCSV = rootPath + 'submit.csv'
 
 imageW = 200
 imageH = 200
-imageSize = imageW * imageH
+# imageSize = imageW * imageH
