@@ -3,7 +3,8 @@ rootPath = 'jiangnan2020_Simple\\'
 trainImage = rootPath + 'train\\train\\'
 testImage = rootPath + 'test\\test\\'
 modelPath = 'model\\CNN.pkl'
-trainSize = 900
+batchSize = 100
+
 predictSize = 100
 
 # # for linux server

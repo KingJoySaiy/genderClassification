@@ -40,16 +40,17 @@ def test(pred, lab):
 
 
 def startTrain():
-    data, label = getTrainData()
-    n, t, x, y = data.shape
+    data = TrainData(batchSize)
 
+    # data, label = getTrainData()
+    # n, t, x, y = data.shape
     print('start initializing!')
-    # normalization
-    for i in range(x):
-        for j in range(y):
-            mean = np.mean(data[:, 0, i, j])
-            std = np.std(data[:, 0, i, j])
-            data[:, 0, i, j] = (data[:, 0, i, j] - mean) / std
+    # # normalization
+    # for i in range(x):
+    #     for j in range(y):
+    #         mean = np.mean(data[:, 0, i, j])
+    #         std = np.std(data[:, 0, i, j])
+    #         data[:, 0, i, j] = (data[:, 0, i, j] - mean) / std
 
     net = CNN()
     # net = torch.load(modelPath)
@@ -60,18 +61,20 @@ def startTrain():
     print('start training!')
     for i in range(epochs):
 
-        np.random.shuffle(data)
-        # print(data[:1, :l - 1])
-        train_data = data[:trainSize, :]
-        train_lab = label[:trainSize].reshape(trainSize)
-        test_data = data[trainSize:, :]
-        test_lab = label[trainSize:].reshape(len(data) - trainSize)
+        # np.random.shuffle(data)
+        # # print(data[:1, :l - 1])
+        # train_data = data[:trainSize, :]
+        # train_lab = label[:trainSize].reshape(trainSize)
+        # valid_data = data[trainSize:, :]
+        # valid_lab = label[trainSize:].reshape(len(data) - trainSize)
+
+        trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
         # 指定模型为训练模式，计算梯度
         net.train()
         # 输入值都需要转化成torch的Tensor
-        x = torch.from_numpy(train_data).float()
-        y = torch.from_numpy(train_lab).long()
+        x = torch.from_numpy(trainData).float()
+        y = torch.from_numpy(trainLabel).long()
         y_hat = net(x)
         # print(type(y), y.shape)
         # print(type(y_hat), y_hat.shape)
@@ -84,8 +87,8 @@ def startTrain():
         if (i + 1) % 1 == 0:  # 这里我们每100次输出相关的信息
             # 指定模型为计算模式
             net.eval()
-            test_in = torch.from_numpy(test_data).float()
-            test_l = torch.from_numpy(test_lab).long()
+            test_in = torch.from_numpy(validData).float()
+            test_l = torch.from_numpy(validLabel).long()
             test_out = net(test_in)
             # 使用我们的测试函数计算准确率
             accu = test(test_out, test_l)
