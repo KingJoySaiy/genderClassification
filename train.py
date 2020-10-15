@@ -1,39 +1,63 @@
 import torch
 import torch.nn as nn
-import numpy as np
-from constant.dataset import *
-from constant.constPath import *
+from constant.dataset import TrainData
+from constant.constPath import modelPath, learningRate
 
 
-class CNN(nn.Module):
-    def __init__(self):
-        super(CNN, self).__init__()
-        self.conv1 = nn.Sequential(  # input shape (1, 28, 28)
-            nn.Conv2d(
-                in_channels=1,  # input height
-                out_channels=16,  # n_filters
-                kernel_size=5,  # filter size
-                stride=1,  # filter movement/step
-                padding=2,
-                # if want same width and length of this image after Conv2d, padding=(kernel_size-1)/2 if stride=1
-            ),  # output shape (16, 28, 28)
-            nn.ReLU(),  # activation
-            nn.BatchNorm2d(16),
-            nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (16, 14, 14)
+def Conv3x3BNReLU(in_channels, out_channels):
+    return nn.Sequential(
+        nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1),
+        nn.BatchNorm2d(out_channels),
+        nn.ReLU6(inplace=True)
+    )
+
+
+class VGGNet(nn.Module):
+    def __init__(self):  # (trainSize, 3, 224, 224)
+        super(VGGNet, self).__init__()
+        block_nums = [2, 2, 3, 3, 3]  # vgg16
+        # block_nums = [2, 2, 4, 4, 4]  # vgg19
+        self.stage1 = self._make_layers(in_channels=3, out_channels=64, block_num=block_nums[0])
+        self.stage2 = self._make_layers(in_channels=64, out_channels=128, block_num=block_nums[1])
+        self.stage3 = self._make_layers(in_channels=128, out_channels=256, block_num=block_nums[2])
+        self.stage4 = self._make_layers(in_channels=256, out_channels=512, block_num=block_nums[3])
+        self.stage5 = self._make_layers(in_channels=512, out_channels=512, block_num=block_nums[4])
+
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=512 * 7 * 7, out_features=4096),
+            nn.Dropout(p=0.2),
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.Dropout(p=0.2),
+            nn.Linear(in_features=4096, out_features=2)
         )
-        self.conv2 = nn.Sequential(  # input shape (16, 14, 14)
-            nn.Conv2d(16, 32, 5, 1, 2),  # output shape (32, 14, 14)
-            nn.BatchNorm2d(32),
-            nn.ReLU(),  # activation
-            nn.MaxPool2d(2),  # output shape (32, 7, 7)
-        )
-        self.out = nn.Linear(32 * 50 * 50, 2)  # fully connected layer, output 10 classes
+
+        self._init_params()
+
+    @staticmethod
+    def _make_layers(in_channels, out_channels, block_num):
+        layers = [Conv3x3BNReLU(in_channels, out_channels)]
+        for i in range(1, block_num):
+            layers.append(Conv3x3BNReLU(out_channels, out_channels))
+        layers.append(nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=False))
+        return nn.Sequential(*layers)
+
+    def _init_params(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = x.view(x.size(0), -1)  # flatten the output of conv2 to (batch_size, 32 * 7 * 7)
-        return self.out(x)
+        x = self.stage1(x)
+        x = self.stage2(x)
+        x = self.stage3(x)
+        x = self.stage4(x)
+        x = self.stage5(x)
+        x = x.view(x.size(0), -1)
+        out = self.classifier(x)
+        return out
 
 
 def test(pred, lab):
@@ -42,17 +66,17 @@ def test(pred, lab):
 
 
 def startTrain():
-    data = TrainData(batchSize)
+    data = TrainData()
 
     # data, label = getTrainData()
     # n, t, x, y = data.shape
     print('start initializing!')
 
-    # net = CNN()
-    net = torch.load(modelPath)
-    criterion = nn.CrossEntropyLoss()  # 浣跨敤CrossEntropyLoss鎹熷け
-    optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam浼樺寲
-    epochs = 36  # 璁粌1000娆?
+    net = VGGNet()
+    # net = torch.load(modelPath)
+    criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
+    optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
+    epochs = 36
 
     print('start training!')
     for i in range(epochs):
@@ -60,27 +84,26 @@ def startTrain():
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
-        # 鎸囧畾妯″瀷涓鸿缁冩ā寮忥紝璁＄畻姊害
+        # 指定模型为训练模式，计算梯度
         net.train()
-        # 杈撳叆鍊奸兘闇�瑕佽浆鍖栨垚torch鐨凾ensor
+        # 输入值都需要转化成torch的Tensor
         x = torch.from_numpy(trainData).float()
         y = torch.from_numpy(trainLabel).long()
         y_hat = net(x)
         # print(type(y), y.shape)
         # print(type(y_hat), y_hat.shape)
 
-        loss = criterion(y_hat, y)  # 璁＄畻鎹熷け
-        optm.zero_grad()  # 鍓嶄竴姝ョ殑鎹熷け娓呴浂
-        loss.backward()  # 鍙嶅悜浼犳挱
-        optm.step()  # 浼樺寲
+        loss = criterion(y_hat, y)  # 计算损失
+        optm.zero_grad()  # 前一步的损失清零
+        loss.backward()  # 反向传播
+        optm.step()  # 优化
 
-        # 鎸囧畾妯″瀷涓鸿绠楁ā寮?
         net.eval()
         test_in = torch.from_numpy(validData).float()
         test_l = torch.from_numpy(validLabel).long()
         test_out = net(test_in)
-        # 浣跨敤鎴戜滑鐨勬祴璇曞嚱鏁拌绠楀噯纭巼
+        # 使用我们的测试函数计算准确率
         accu = test(test_out, test_l)
-        print("Epoch:{},Loss:{:.4f},Accuracy锛歿:.2f}".format(i + 1, loss.item(), accu))
+        print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
 
     torch.save(net, modelPath)
