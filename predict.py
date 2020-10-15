@@ -5,7 +5,7 @@ from constant.constPath import modelPath, submitCSV, predictBatch
 
 
 def startPredict():
-    data = TestData(predictBatch)
+    data = TestData()
     net = torch.load(modelPath)
     writer = csv.writer(open(submitCSV, "w+", newline=""))
     writer.writerow(['id', 'label'])

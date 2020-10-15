@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from constant.dataset import TrainData
-from constant.constPath import modelPath, learningRate
+from constant.constPath import modelPath, learningRate, initialMomentum, weightDecay
 
 
 def Conv3x3BNReLU(in_channels, out_channels):
@@ -72,15 +72,17 @@ def startTrain():
     # n, t, x, y = data.shape
     print('start initializing!')
 
-    net = VGGNet()
-    # net = torch.load(modelPath)
+    # net = VGGNet()
+    net = torch.load(modelPath)
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
-    epochs = 36
-
+    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
+    optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
+    epochs = 600
+    # 300 epoch -> tocal training
+    
     print('start training!')
     for i in range(epochs):
-        if (i + 1) % 18 == 0:
+        if i % 60 == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
