@@ -18,10 +18,12 @@ class CNN(nn.Module):
                 # if want same width and length of this image after Conv2d, padding=(kernel_size-1)/2 if stride=1
             ),  # output shape (16, 28, 28)
             nn.ReLU(),  # activation
+            nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=2),  # choose max value in 2x2 area, output shape (16, 14, 14)
         )
         self.conv2 = nn.Sequential(  # input shape (16, 14, 14)
             nn.Conv2d(16, 32, 5, 1, 2),  # output shape (32, 14, 14)
+            nn.BatchNorm2d(32),
             nn.ReLU(),  # activation
             nn.MaxPool2d(2),  # output shape (32, 7, 7)
         )
@@ -45,29 +47,17 @@ def startTrain():
     # data, label = getTrainData()
     # n, t, x, y = data.shape
     print('start initializing!')
-    # # normalization
-    # for i in range(x):
-    #     for j in range(y):
-    #         mean = np.mean(data[:, 0, i, j])
-    #         std = np.std(data[:, 0, i, j])
-    #         data[:, 0, i, j] = (data[:, 0, i, j] - mean) / std
 
-    net = CNN()
-    # net = torch.load(modelPath)
+    # net = CNN()
+    net = torch.load(modelPath)
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    optm = torch.optim.Adam(net.parameters())  # Adam优化
-    epochs = 200  # 训练1000次
+    optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
+    epochs = 36  # 训练1000�?
 
     print('start training!')
     for i in range(epochs):
-
-        # np.random.shuffle(data)
-        # # print(data[:1, :l - 1])
-        # train_data = data[:trainSize, :]
-        # train_lab = label[:trainSize].reshape(trainSize)
-        # valid_data = data[trainSize:, :]
-        # valid_lab = label[trainSize:].reshape(len(data) - trainSize)
-
+        if (i + 1) % 18 == 0:
+            data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
         # 指定模型为训练模式，计算梯度
@@ -84,14 +74,13 @@ def startTrain():
         loss.backward()  # 反向传播
         optm.step()  # 优化
 
-        if (i + 1) % 1 == 0:  # 这里我们每100次输出相关的信息
-            # 指定模型为计算模式
-            net.eval()
-            test_in = torch.from_numpy(validData).float()
-            test_l = torch.from_numpy(validLabel).long()
-            test_out = net(test_in)
-            # 使用我们的测试函数计算准确率
-            accu = test(test_out, test_l)
-            print("Epoch:{},Loss:{:.4f},Accuracy：{:.2f}".format(i + 1, loss.item(), accu))
+        # 指定模型为计算模�?
+        net.eval()
+        test_in = torch.from_numpy(validData).float()
+        test_l = torch.from_numpy(validLabel).long()
+        test_out = net(test_in)
+        # 使用我们的测试函数计算准确率
+        accu = test(test_out, test_l)
+        print("Epoch:{},Loss:{:.4f},Accuracy：{:.2f}".format(i + 1, loss.item(), accu))
 
-    # torch.save(net, modelPath)
+    torch.save(net, modelPath)

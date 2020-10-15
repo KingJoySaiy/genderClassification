@@ -1,17 +1,9 @@
-import random
-import constant.dataset
-
+from constant.dataset import *
+from predict import startPredict
 from train import startTrain
-from constant.constPath import submitCSV
+from constant.constPath import *
 import csv
 
-# def writePredictData():
-#     id, label = startPredict()
-#     writer = csv.writer(open(submitCSV, "w", newline=""))
-#
-#     writer.writerow(['id', 'label'])
-#     for row in range(len(id)):
-#         writer.writerow([int(id[row]), int(label[row])])
-
+setSeed(globalSeed)
 startTrain()
-# writePredictData()
+# startPredict()

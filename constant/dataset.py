@@ -6,6 +6,14 @@ from constant.constPath import imageH, imageW, trainCSV, testCSV, trainImage, te
 import torch
 import random
 
+
+def setSeed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
 # ct = 0
 
 
@@ -48,6 +56,15 @@ def getIdLabelSet():
     return np.array(id).reshape(len(id)), np.array(label).reshape(len(id))
 
 
+def getIdSet():
+    testId = []
+    reader = csv.reader(open(testCSV, 'r'))
+    next(reader)
+    for row in reader:
+        testId.append(int(row[0]))
+    return np.array(testId).reshape(len(testId))
+
+
 class TrainData:
     def __init__(self, batch):
         self.idSet, self.labelSet = getIdLabelSet()
@@ -56,16 +73,16 @@ class TrainData:
         self.trainLen = int(self.batch * 0.7)
         self.len = len(self.idSet)
 
-    def reset(self):
-        newId = range(self.len)
+    def shuffle(self):
+        newId = list(range(self.len))
         random.shuffle(newId)
         newIdSet = []
         newLabelSet = []
         for i in range(self.len):
-            newIdSet[i] = self.idSet[newId[i]]
-            newLabelSet[i] = self.labelSet[newId[i]]
-        self.idSet = newIdSet
-        self.labelSet = newLabelSet
+            newIdSet.append(self.idSet[newId[i]])
+            newLabelSet.append(self.labelSet[newId[i]])
+        self.idSet = np.array(newIdSet)
+        self.labelSet = np.array(newLabelSet)
         self.now = 0
 
     # train(trainLen, 1, 200, 200) (trainLen, 1) valid:(batch - trainLen, 1, 200, 200) (batch - trainLen, 1)
@@ -76,16 +93,36 @@ class TrainData:
 
         ct = 0
         for i in self.idSet[self.now:self.now + self.trainLen]:
-            trainData[ct] = readImage(trainImage + str(self.idSet[i]) + '.jpg')
+            trainData[ct] = readImage(trainImage + str(i) + '.jpg')
             ct += 1
         ct = 0
         for i in self.idSet[self.now + self.trainLen:self.now + self.batch]:
-            validData[ct] = readImage(trainImage + str(self.idSet[i]) + '.jpg')
+            validData[ct] = readImage(trainImage + str(i) + '.jpg')
             ct += 1
 
-        res = trainData, self.labelSet[self.now:self.now + self.trainLen], validData, self.labelSet[self.now + self.trainLen:self.now + self.batch]
-        # self.now = (self.now + self.batch) % self.len
-        self.now += self.batch
-        if self.now + self.batch > self.len:
-            self.now = 0
+        res = trainData, self.labelSet[self.now:self.now + self.trainLen], validData, self.labelSet[
+                                                                                      self.now + self.trainLen:self.now + self.batch]
+        self.now = (self.now + self.batch) % self.len
+        return res
+
+
+class TestData:
+    def __init__(self, batch):
+        self.idSet = getIdSet()
+        self.now = 0
+        self.batch = batch
+        self.len = len(self.idSet)
+
+    # train(trainLen, 1, 200, 200)
+    def nextTest(self):
+        if self.now == self.len:
+            return None, None
+        nowLen = min(self.batch, self.len - self.now)
+        testData = np.zeros((self.batch, 1, imageH, imageW))
+        ct = 0
+        for i in self.idSet[self.now:self.now + nowLen]:
+            testData[ct] = readImage(testImage + str(i) + '.jpg')
+            ct += 1
+        res = testData, self.idSet[self.now:self.now + nowLen]
+        self.now += nowLen
         return res
