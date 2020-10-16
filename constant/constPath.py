@@ -3,29 +3,29 @@
 rootPath = 'jiangnan2020_Simple\\'
 trainImage = rootPath + 'train\\train\\'
 testImage = rootPath + 'test\\test\\'
-modelPath = 'model\\VGGNet.pkl'
-trainBatch = 20
-predictBatch = 10
+modelPath = 'model\\LeNet5.pkl'
+trainBatch = 100
+predictBatch = 50
 '''
 
 # for linux server
 rootPath = 'jiangnan2020/'
 trainImage = rootPath + 'train/train/'
 testImage = rootPath + 'test/test/'
-modelPath = 'model/VGGNet.pkl'
-trainBatch = 60
-predictBatch = 20
+modelPath = 'model/LeNet5.pkl'
+trainBatch = 1000
+predictBatch = 500
 
 
 trainCSV = rootPath + 'train.csv'
 testCSV = rootPath + 'test.csv'
 submitCSV = rootPath + 'submit.csv'
 
-imageW = 224
-imageH = 224
+imageW = 200
+imageH = 200
 globalSeed = 233
 
-# learningRate = 0.001  # 1-200 epoch
-learningRate = 0.0001
+trainPropotion = 0.95
+learningRate = 1e-4
 initialMomentum = 0.9
 weightDecay = 1e-4

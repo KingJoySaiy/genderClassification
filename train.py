@@ -1,64 +1,39 @@
 import torch
 import torch.nn as nn
 from constant.dataset import TrainData
-from constant.constPath import modelPath, learningRate, initialMomentum, weightDecay
+from constant.constPath import *
+from torch.nn import functional as F
 
+class LeNet5(nn.Module):
 
-def Conv3x3BNReLU(in_channels, out_channels):
-    return nn.Sequential(
-        nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, stride=1, padding=1),
-        nn.BatchNorm2d(out_channels),
-        nn.ReLU6(inplace=True)
-    )
-
-
-class VGGNet(nn.Module):
-    def __init__(self):  # (trainSize, 3, 224, 224)
-        super(VGGNet, self).__init__()
-        block_nums = [2, 2, 3, 3, 3]  # vgg16
-        # block_nums = [2, 2, 4, 4, 4]  # vgg19
-        self.stage1 = self._make_layers(in_channels=3, out_channels=64, block_num=block_nums[0])
-        self.stage2 = self._make_layers(in_channels=64, out_channels=128, block_num=block_nums[1])
-        self.stage3 = self._make_layers(in_channels=128, out_channels=256, block_num=block_nums[2])
-        self.stage4 = self._make_layers(in_channels=256, out_channels=512, block_num=block_nums[3])
-        self.stage5 = self._make_layers(in_channels=512, out_channels=512, block_num=block_nums[4])
-
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features=512 * 7 * 7, out_features=4096),
-            nn.Dropout(p=0.2),
-            nn.Linear(in_features=4096, out_features=4096),
-            nn.Dropout(p=0.2),
-            nn.Linear(in_features=4096, out_features=2)
-        )
-
-        self._init_params()
-
-    @staticmethod
-    def _make_layers(in_channels, out_channels, block_num):
-        layers = [Conv3x3BNReLU(in_channels, out_channels)]
-        for i in range(1, block_num):
-            layers.append(Conv3x3BNReLU(out_channels, out_channels))
-        layers.append(nn.MaxPool2d(kernel_size=2, stride=2, ceil_mode=False))
-        return nn.Sequential(*layers)
-
-    def _init_params(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+    def __init__(self):
+        super(LeNet5, self).__init__()
+        # 1 input image channel, 6 output channels, 5x5 square convolution
+        # kernel
+        self.conv1 = nn.Conv2d(1, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        # an affine operation: y = Wx + b
+        self.fc1 = nn.Linear(16 * 47 * 47, 120) # 这里论文上写的是conv,官方教程用了线性层
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 2)
 
     def forward(self, x):
-        x = self.stage1(x)
-        x = self.stage2(x)
-        x = self.stage3(x)
-        x = self.stage4(x)
-        x = self.stage5(x)
-        x = x.view(x.size(0), -1)
-        out = self.classifier(x)
-        return out
-
+        # Max pooling over a (2, 2) window
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        # If the size is a square you can only specify a single number
+        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        x = x.view(-1, self.num_flat_features(x))
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
+    
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
 
 def test(pred, lab):
     t = pred.max(-1)[1] == lab
@@ -72,25 +47,25 @@ def startTrain():
     # n, t, x, y = data.shape
     print('start initializing!')
 
-    # net = VGGNet()
+    # net = LeNet5()
     net = torch.load(modelPath)
+    net.cuda()
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
-    optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
-    epochs = 600
-    # 300 epoch -> tocal training
-    
+    optm = torch.optim.Adam(net.parameters())  # Adam优化
+    # optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
+    epochs = 90  # 18 -> total
+
     print('start training!')
     for i in range(epochs):
-        if i % 60 == 0:
+        if i % 18 == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
         # 指定模型为训练模式，计算梯度
         net.train()
         # 输入值都需要转化成torch的Tensor
-        x = torch.from_numpy(trainData).float()
-        y = torch.from_numpy(trainLabel).long()
+        x = torch.from_numpy(trainData).float().cuda()
+        y = torch.from_numpy(trainLabel).long().cuda()
         y_hat = net(x)
         # print(type(y), y.shape)
         # print(type(y_hat), y_hat.shape)
@@ -101,8 +76,8 @@ def startTrain():
         optm.step()  # 优化
 
         net.eval()
-        test_in = torch.from_numpy(validData).float()
-        test_l = torch.from_numpy(validLabel).long()
+        test_in = torch.from_numpy(validData).float().cuda()
+        test_l = torch.from_numpy(validLabel).long().cuda()
         test_out = net(test_in)
         # 使用我们的测试函数计算准确率
         accu = test(test_out, test_l)

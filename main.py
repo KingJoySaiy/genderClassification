@@ -1,16 +1,35 @@
-import numpy
-
 from constant.dataset import *
 from predict import startPredict
 from train import startTrain
 from constant.constPath import *
 import csv
+import torch
 
-setSeed(globalSeed)
+def startPredict():
+    data = TestData()
+    net = torch.load(modelPath)
+    net.cuda()
+    writer = csv.writer(open(submitCSV, "w+", newline=""))
+    writer.writerow(['id', 'label'])
+
+    ct = 0
+    all = 5708 // predictBatch
+    testData, id = data.nextTest()
+    while testData is not None:
+        print('predict Epoch: ', ct, '/', all)
+        ct += 1
+        test_in = torch.from_numpy(testData).float().cuda()
+        test_out = net(test_in)
+        label = test_out.max(-1)[1]
+        for row in range(len(id)):
+            writer.writerow([int(id[row]), int(label[row])])
+        testData, id = data.nextTest()
+
+# setSeed(globalSeed)
 startTrain()
 startPredict()
 
-# xx = numpy.zeros((200, 200, 3))
-# print(type(xx), xx.shape)
-# xx.resize((3, 224, 224))
-# print(xx.shape)
+
+
+
+
