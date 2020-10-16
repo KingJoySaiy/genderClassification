@@ -2,38 +2,42 @@ import torch
 import torch.nn as nn
 from constant.dataset import TrainData
 from constant.constPath import *
-from torch.nn import functional as F
 
-class LeNet5(nn.Module):
 
+class AlexNet(nn.Module):
     def __init__(self):
-        super(LeNet5, self).__init__()
-        # 1 input image channel, 6 output channels, 5x5 square convolution
-        # kernel
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        # an affine operation: y = Wx + b
-        self.fc1 = nn.Linear(16 * 47 * 47, 120) # 这里论文上写的是conv,官方教程用了线性层
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 2)
+        super(AlexNet, self).__init__()
+        self.feature_extraction = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=96, kernel_size=11, stride=4, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+            nn.Conv2d(in_channels=96, out_channels=192, kernel_size=5, stride=1, padding=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+            nn.Conv2d(in_channels=192, out_channels=384, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=0),
+        )
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=256 * 6 * 6, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(in_features=4096, out_features=4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(in_features=4096, out_features=2),
+        )
 
     def forward(self, x):
-        # Max pooling over a (2, 2) window
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        # If the size is a square you can only specify a single number
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.feature_extraction(x)
+        x = x.view(x.size(0), 256 * 6 * 6)
+        x = self.classifier(x)
         return x
-    
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
+
 
 def test(pred, lab):
     t = pred.max(-1)[1] == lab
@@ -47,17 +51,17 @@ def startTrain():
     # n, t, x, y = data.shape
     print('start initializing!')
 
-    # net = LeNet5()
+    # net = AlexNet()
     net = torch.load(modelPath)
     net.cuda()
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    optm = torch.optim.Adam(net.parameters())  # Adam优化
-    # optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
-    epochs = 90  # 18 -> total
+    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
+    optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
+    epochs = 600  # 20 -> total
 
     print('start training!')
     for i in range(epochs):
-        if i % 18 == 0:
+        if i % 20 == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 

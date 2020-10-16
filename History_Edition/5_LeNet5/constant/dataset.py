@@ -17,8 +17,7 @@ def setSeed(seed):
 
 def readImage(path):
     im = image.imread(path)  # (200, 200, 3)
-    # print(type(im), im.shape)
-    return np.resize(im, (3, imageH, imageW))
+    return np.mean(im, axis=2).reshape((1, imageH, imageW))  # (1, 200, 200)
 
 
 # training data:label (trainSize, 1, 200, 200) (trainSize, 1)
@@ -33,7 +32,7 @@ def getTrainData():
         label.append(int(row[1]))
 
     # get matrix of training image
-    data = np.zeros((len(id), 3, imageH, imageW))
+    data = np.zeros((len(id), 1, imageH, imageW))
     ct = 0
     for i in id:
         data[ct] = readImage(trainImage + str(i) + '.jpg')
@@ -83,8 +82,8 @@ class TrainData:
     # train: (trainLen, 1, 200, 200) (trainLen, 1) valid:(batch - trainLen, 1, 200, 200) (batch - trainLen, 1)
     def nextTrainValid(self):
 
-        trainData = np.zeros((self.trainLen, 3, imageH, imageW))
-        validData = np.zeros((trainBatch - self.trainLen, 3, imageH, imageW))
+        trainData = np.zeros((self.trainLen, 1, imageH, imageW))
+        validData = np.zeros((trainBatch - self.trainLen, 1, imageH, imageW))
 
         ct = 0
         for i in self.idSet[self.now:self.now + self.trainLen]:
@@ -112,7 +111,7 @@ class TestData:
         if self.now == self.len:
             return None, None
         nowLen = min(predictBatch, self.len - self.now)
-        testData = np.zeros((predictBatch, 3, imageH, imageW))
+        testData = np.zeros((predictBatch, 1, imageH, imageW))
         ct = 0
         for i in self.idSet[self.now:self.now + nowLen]:
             testData[ct] = readImage(testImage + str(i) + '.jpg')
