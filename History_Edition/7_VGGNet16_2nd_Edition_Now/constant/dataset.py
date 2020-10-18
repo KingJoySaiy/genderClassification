@@ -1,10 +1,12 @@
 from torch.utils.data import Dataset
 import csv
 import numpy as np
-from matplotlib import image
+from PIL import Image
 from constant.constPath import *
 import torch
 import random
+import torchvision
+import numpy
 
 
 def setSeed(seed):
@@ -16,9 +18,16 @@ def setSeed(seed):
 
 
 def readImage(path):
-    im = image.imread(path)  # (200, 200, 3)
-    # print(type(im), im.shape)
-    return np.resize(im, (3, imageH, imageW))
+    im = Image.open(path)   # (200, 200)
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(256),
+        torchvision.transforms.RandomCrop(224),
+        torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
+        torchvision.transforms.RandomHorizontalFlip(0.5),
+    ])
+    im = numpy.array(transform(im))  # (224, 224, 3)
+    return im.reshape((3, imageH, imageW))  # (3, 224, 224)
+
 
 
 # training data:label (trainSize, 1, 200, 200) (trainSize, 1)

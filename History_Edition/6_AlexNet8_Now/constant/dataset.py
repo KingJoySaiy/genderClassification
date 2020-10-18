@@ -1,10 +1,11 @@
-from torch.utils.data import Dataset
 import csv
 import numpy as np
-from matplotlib import image
+from PIL import Image
 from constant.constPath import *
 import torch
 import random
+import torchvision
+import numpy
 
 
 def setSeed(seed):
@@ -16,9 +17,15 @@ def setSeed(seed):
 
 
 def readImage(path):
-    im = image.imread(path)  # (200, 200, 3)
-    # print(type(im), im.shape)
-    return np.resize(im, (3, imageH, imageW))
+    im = Image.open(path)  # (200, 200)
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.Resize(256),
+        torchvision.transforms.RandomCrop(imageH),
+        torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
+        torchvision.transforms.RandomHorizontalFlip(0.5),
+    ])
+    im = numpy.array(transform(im))  # (227, 227, 3)
+    return im.reshape((3, imageH, imageW))  # (3, 227, 227)
 
 
 # training data:label (trainSize, 1, 200, 200) (trainSize, 1)
@@ -65,7 +72,7 @@ class TrainData:
     def __init__(self):
         self.idSet, self.labelSet = getIdLabelSet()
         self.now = 0
-        self.trainLen = int(trainBatch * trainPropotion)
+        self.trainLen = int(trainBatch * trainProportion)
         self.len = len(self.idSet)
 
     def shuffle(self):

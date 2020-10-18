@@ -67,22 +67,20 @@ def test(pred, lab):
 
 def startTrain():
     data = TrainData()
-
-    # data, label = getTrainData()
-    # n, t, x, y = data.shape
     print('start initializing!')
 
-    # net = VGGNet()
-    net = torch.load(modelPath)
+    if newModel:
+        net = VGGNet()
+    else:
+        net = torch.load(modelPath)
     net.cuda()
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
     optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
-    epochs = 10000  # 500 -> total
+    epochs = trainEpochs
 
     print('start training!')
     for i in range(epochs):
-        if i % 500 == 0:
+        if i % oneTotal == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 
@@ -104,7 +102,6 @@ def startTrain():
         test_in = torch.from_numpy(validData).float().cuda()
         test_l = torch.from_numpy(validLabel).long().cuda()
         test_out = net(test_in)
-        # 使用我们的测试函数计算准确率
         accu = test(test_out, test_l)
         print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
 

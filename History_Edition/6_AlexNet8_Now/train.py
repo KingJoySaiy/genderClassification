@@ -51,17 +51,19 @@ def startTrain():
     # n, t, x, y = data.shape
     print('start initializing!')
 
-    # net = AlexNet()
-    net = torch.load(modelPath)
+    if newModel:
+        net = AlexNet()
+    else:
+        net = torch.load(modelPath)
+
     net.cuda()
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
-    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)  # Adam优化
     optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
-    epochs = 600  # 20 -> total
+    epochs = trainEpochs
 
     print('start training!')
     for i in range(epochs):
-        if i % 20 == 0:
+        if i % oneTotal == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
 

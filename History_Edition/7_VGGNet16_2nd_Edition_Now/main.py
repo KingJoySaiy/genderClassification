@@ -4,6 +4,7 @@ from constant.constPath import *
 import csv
 import torch
 
+
 def startPredict():
     data = TestData()
     net = torch.load(modelPath)
@@ -24,11 +25,10 @@ def startPredict():
             writer.writerow([int(id[row]), int(label[row])])
         testData, id = data.nextTest()
 
+
 # setSeed(globalSeed)
-startTrain()
-startPredict()
 
-
-
-
-
+if needTrain:
+    startTrain()
+if needPredict:
+    startPredict()
