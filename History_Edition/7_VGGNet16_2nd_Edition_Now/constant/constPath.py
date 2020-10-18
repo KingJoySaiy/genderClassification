@@ -25,13 +25,13 @@ imageW = 224
 imageH = 224
 globalSeed = 233
 
-trainEpochs = 1500
+trainEpochs = 100
 oneTotal = 18000 / trainBatch
-needTrain = True
+needTrain = False
 needPredict = True
 newModel = False
 
 trainPropotion = 0.7
-learningRate = 0.000001
+learningRate = 0.00001
 initialMomentum = 0.9
 weightDecay = 1e-4
