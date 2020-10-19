@@ -18,18 +18,17 @@ def setSeed(seed):
 
 
 def readImage(path):
-    im = Image.open(path)   # (200, 200)
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.Resize(240),
-        torchvision.transforms.RandomCrop(224),
-        torchvision.transforms.ColorJitter(brightness=0.3, contrast=0.3),
-        torchvision.transforms.RandomHorizontalFlip(0.5),
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
-    im = transform(im).numpy()  # (227, 227, 3)
-    return im.reshape((3, imageH, imageW))  # (3, 224, 224)
-
+    with Image.open(path) as im:    # (200, 200)
+        transform = torchvision.transforms.Compose([
+            torchvision.transforms.Resize(240),
+            torchvision.transforms.RandomCrop(224),
+            torchvision.transforms.ColorJitter(brightness=0.3, contrast=0.3),
+            torchvision.transforms.RandomHorizontalFlip(0.5),
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        im = transform(im).numpy()  # (227, 227, 3)
+        return im.reshape((3, imageH, imageW))  # (3, 224, 224)
 
 
 # training data:label (trainSize, 1, 200, 200) (trainSize, 1)
@@ -37,17 +36,18 @@ def getTrainData():
     # get training id & label
     id = []
     label = []
-    reader = csv.reader(open(trainCSV, 'r'))
-    next(reader)
-    for row in reader:
-        id.append(int(row[0]))
-        label.append(int(row[1]))
+    with open(trainCSV, 'r') as f:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            id.append(int(row[0]))
+            label.append(int(row[1]))
 
     # get matrix of training image
     data = np.zeros((len(id), 3, imageH, imageW))
     ct = 0
     for i in id:
-        data[ct] = readImage(trainImage + str(i) + '.jpg')
+        data[ct] = readImage(join(trainImage, str(i) + '.jpg'))
         ct += 1
     return data, np.array(label).reshape(len(label), 1)
 
@@ -55,20 +55,22 @@ def getTrainData():
 def getIdLabelSet():
     id = []
     label = []
-    reader = csv.reader(open(trainCSV, 'r'))
-    next(reader)
-    for row in reader:
-        id.append(int(row[0]))
-        label.append(int(row[1]))
+    with open(trainCSV, 'r') as f:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            id.append(int(row[0]))
+            label.append(int(row[1]))
     return np.array(id).reshape(len(id)), np.array(label).reshape(len(id))
 
 
 def getIdSet():
     testId = []
-    reader = csv.reader(open(testCSV, 'r'))
-    next(reader)
-    for row in reader:
-        testId.append(int(row[0]))
+    with open(testCSV, 'r') as f:
+        reader = csv.reader(f)
+        next(reader)
+        for row in reader:
+            testId.append(int(row[0]))
     return np.array(testId).reshape(len(testId))
 
 
@@ -76,7 +78,7 @@ class TrainData:
     def __init__(self):
         self.idSet, self.labelSet = getIdLabelSet()
         self.now = 0
-        self.trainLen = int(trainBatch * trainPropotion)
+        self.trainLen = int(trainBatch * trainProportion)
         self.len = len(self.idSet)
 
     def shuffle(self):
@@ -99,11 +101,11 @@ class TrainData:
 
         ct = 0
         for i in self.idSet[self.now:self.now + self.trainLen]:
-            trainData[ct] = readImage(trainImage + str(i) + '.jpg')
+            trainData[ct] = readImage(join(trainImage, str(i) + '.jpg'))
             ct += 1
         ct = 0
         for i in self.idSet[self.now + self.trainLen:self.now + trainBatch]:
-            validData[ct] = readImage(trainImage + str(i) + '.jpg')
+            validData[ct] = readImage(join(trainImage, str(i) + '.jpg'))
             ct += 1
 
         res = trainData, self.labelSet[self.now:self.now + self.trainLen], validData, self.labelSet[
@@ -126,7 +128,7 @@ class TestData:
         testData = np.zeros((predictBatch, 3, imageH, imageW))
         ct = 0
         for i in self.idSet[self.now:self.now + nowLen]:
-            testData[ct] = readImage(testImage + str(i) + '.jpg')
+            testData[ct] = readImage(join(testImage, str(i) + '.jpg'))
             ct += 1
         res = testData, self.idSet[self.now:self.now + nowLen]
         self.now += nowLen

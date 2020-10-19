@@ -5,30 +5,35 @@ import csv
 import torch
 
 
-def startPredict():
+def startPredict(bestModelPath):
     data = TestData()
-    net = torch.load(modelPath)
-    net.cuda()
-    writer = csv.writer(open(submitCSV, "w+", newline=""))
-    writer.writerow(['id', 'label'])
+    net = torch.load(bestModelPath)
 
-    ct = 0
-    all = 5708 // predictBatch
-    testData, id = data.nextTest()
-    while testData is not None:
-        print('predict Epoch: ', ct, '/', all)
-        ct += 1
-        test_in = torch.from_numpy(testData).float().cuda()
-        test_out = net(test_in)
-        label = test_out.max(-1)[1]
-        for row in range(len(id)):
-            writer.writerow([int(id[row]), int(label[row])])
+    if needCuda:
+        net.cuda()
+    with open(submitCSV, 'w+', newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(['id', 'label'])
+
+        ct = 0
+        all = 5708 // predictBatch
         testData, id = data.nextTest()
+        while testData is not None:
+            print('predict Epoch: ', ct, '/', all)
+            ct += 1
+            net.eval()
+            test_in = (torch.from_numpy(testData).float().cuda() if needCuda else torch.from_numpy(testData).float())
+            test_out = net(test_in)
+            label = test_out.max(-1)[1]
+            for row in range(len(id)):
+                writer.writerow([int(id[row]), int(label[row])])
+            testData, id = data.nextTest()
 
 
 # setSeed(globalSeed)
 
+
 if needTrain:
     startTrain()
 if needPredict:
-    startPredict()
+    startPredict(join('model', 'model' + str(input()) + '.pkl'))

@@ -1,7 +1,10 @@
+from math import inf
 import torch
 import torch.nn as nn
 from constant.dataset import TrainData
 from constant.constPath import *
+from os.path import join
+import sys
 
 
 def Conv3x3BNReLU(in_channels, out_channels):
@@ -58,7 +61,7 @@ class VGGNet(nn.Module):
         x = x.view(x.size(0), -1)
         out = self.classifier(x)
         return out
-        
+
 
 def test(pred, lab):
     t = pred.max(-1)[1] == lab
@@ -69,16 +72,16 @@ def startTrain():
     data = TrainData()
     print('start initializing!')
 
-    if newModel:
-        net = VGGNet()
-    else:
-        net = torch.load(modelPath)
-    net.cuda()
+    net = VGGNet() if newModel else torch.load(modelPath)
+    if needCuda:
+        net.cuda()
     criterion = nn.CrossEntropyLoss()  # 使用CrossEntropyLoss损失
     optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
     epochs = trainEpochs
+    oneTotal = 18000 / trainBatch
 
     print('start training!')
+    nowLoss, bestLoss = 0, inf
     for i in range(epochs):
         if i % oneTotal == 0:
             data.shuffle()
@@ -87,22 +90,36 @@ def startTrain():
         # 指定模型为训练模式，计算梯度
         net.train()
         # 输入值都需要转化成torch的Tensor
-        x = torch.from_numpy(trainData).float().cuda()
-        y = torch.from_numpy(trainLabel).long().cuda()
-        y_hat = net(x)
-        # print(type(y), y.shape)
-        # print(type(y_hat), y_hat.shape)
+        if needCuda:
+            x = torch.from_numpy(trainData).float().cuda()
+            y = torch.from_numpy(trainLabel).long().cuda()
+            test_in = torch.from_numpy(validData).float().cuda()
+            test_l = torch.from_numpy(validLabel).long().cuda()
+        else:
+            x = torch.from_numpy(trainData).float()
+            y = torch.from_numpy(trainLabel).long()
+            test_in = torch.from_numpy(validData).float()
+            test_l = torch.from_numpy(validLabel).long()
 
+        y_hat = net(x)
         loss = criterion(y_hat, y)  # 计算损失
         optm.zero_grad()  # 前一步的损失清零
         loss.backward()  # 反向传播
         optm.step()  # 优化
 
         net.eval()
-        test_in = torch.from_numpy(validData).float().cuda()
-        test_l = torch.from_numpy(validLabel).long().cuda()
         test_out = net(test_in)
         accu = test(test_out, test_l)
         print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
+        if loss.item() < 0.03:
+            torch.save(net, modelPath)
+            sys.exit(0)
+        nowLoss += loss.item()
+        if (i + 1) % oneTotal == 0:
+            torch.save(net, join('model', 'model' + str(nowLoss) + '.pkl'))
+            print('model ' + str(nowLoss) + ' saved')
+            if nowLoss < bestLoss:
+                bestLoss = nowLoss
+            nowLoss = 0
 
     torch.save(net, modelPath)
