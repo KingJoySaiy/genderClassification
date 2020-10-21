@@ -77,8 +77,10 @@ def startTrain():
         net.cuda()
     criterion = nn.CrossEntropyLoss()  # Ê¹ÓÃCrossEntropyLossËðÊ§
     optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
+    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)
     epochs = trainEpochs
     oneTotal = 18000 / trainBatch
+    # oneTotal = 200
 
     print('start training!')
     nowLoss, bestLoss = 0, inf
@@ -111,8 +113,8 @@ def startTrain():
         test_out = net(test_in)
         accu = test(test_out, test_l)
         print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
-        if loss.item() < 0.03:
-            torch.save(net, modelPath)
+        if loss.item() < 0.05:
+            torch.save(net, join('model', 'model-1.pkl'))
             sys.exit(0)
         nowLoss += loss.item()
         if (i + 1) % oneTotal == 0:

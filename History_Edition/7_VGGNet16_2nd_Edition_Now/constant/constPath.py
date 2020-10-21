@@ -26,15 +26,15 @@ globalSeed = 233
 
 
 trainEpochs = 500
-learningRate = 0.000001
+learningRate = 1e-6
 trainProportion = 0.7
 initialMomentum = 0.9
 weightDecay = 1e-4
 
 
+needTrain = False
 needCuda = True
-needTrain = True
-needPredict = False
+needPredict = not needTrain
 newModel = False
 
 

@@ -36,4 +36,4 @@ def startPredict(bestModelPath):
 if needTrain:
     startTrain()
 if needPredict:
-    startPredict(join('model', 'model' + str(input()) + '.pkl'))
+    startPredict(join('model', 'model-1.pkl'))
