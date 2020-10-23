@@ -5,8 +5,9 @@ from constant.dataset import TrainData
 from constant.constPath import *
 from os.path import join
 import sys
+from torchvision import datasets, models, transforms
 
-
+'''
 def Conv1(in_planes, places, stride=2):
     return nn.Sequential(
         nn.Conv2d(in_channels=in_planes, out_channels=places, kernel_size=7, stride=stride, padding=3, bias=False),
@@ -90,7 +91,7 @@ class ResNet50(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
-
+'''
 
 def test(pred, lab):
     t = pred.max(-1)[1] == lab
@@ -101,18 +102,17 @@ def startTrain():
     data = TrainData()
     print('start initializing!')
 
-    net = ResNet50() if newModel else torch.load(modelPath)
+    net = models.resnet152(pretrained=True) if newModel else torch.load(modelPath)
     if needCuda:
         net.cuda()
     criterion = nn.CrossEntropyLoss()  # Ê¹ÓÃCrossEntropyLossËðÊ§
-    optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
-    # optm = torch.optim.Adam(net.parameters(), lr=learningRate)
-    epochs = trainEpochs
+    # optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
+    optm = torch.optim.Adam(net.parameters(), lr=learningRate)
     oneTotal = imageTotal / trainBatch
-    # oneTotal = 200
 
     print('start training!')
-    for i in range(epochs):
+    nowLoss = 0
+    for i in range(trainEpochs):
         if i % oneTotal == 0:
             data.shuffle()
         trainData, trainLabel, validData, validLabel = data.nextTrainValid()
@@ -141,5 +141,15 @@ def startTrain():
         test_out = net(test_in)
         accu = test(test_out, test_l)
         print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
+        
+        if loss.item() < 0.05:
+            torch.save(net, join('model', 'model-1.pkl'))
+            sys.exit(0)
+        
+        nowLoss += loss.item()
+        if (i + 1) % oneTotal == 0:
+            torch.save(net, join('model', 'model' + str(nowLoss) + '.pkl'))
+            print('model ' + str(nowLoss) + ' saved')
+            nowLoss = 0
 
     torch.save(net, modelPath)

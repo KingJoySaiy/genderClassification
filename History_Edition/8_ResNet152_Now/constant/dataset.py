@@ -19,9 +19,9 @@ def setSeed(seed):
 def readImage(path):
     with Image.open(path) as im:    # (200, 200)
         transform = torchvision.transforms.Compose([
-            torchvision.transforms.Resize(240),
+            torchvision.transforms.Resize(256),
             torchvision.transforms.RandomCrop(224),
-            torchvision.transforms.ColorJitter(brightness=0.3, contrast=0.3),
+            torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5),
             torchvision.transforms.RandomHorizontalFlip(0.5),
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
