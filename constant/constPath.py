@@ -1,16 +1,21 @@
 from os.path import join
+import random
+import numpy
+import torch
 
+'''
 # for windows laptop
 rootPath = 'jiangnan2020_Simple'
 trainBatch = 5
+validBatch = 5
 predictBatch = 5
-
 '''
 # for linux server
 rootPath = 'jiangnan2020'
 trainBatch = 60
-predictBatch = 50
-'''
+validBatch = 10
+predictBatch = 40
+
 
 trainImage = join(rootPath, 'train', 'train')
 testImage = join(rootPath, 'test', 'test')
@@ -22,19 +27,24 @@ modelPath = join('savedModel', 'ResNet50.pkl')
 
 imageW = 224
 imageH = 224
-globalSeed = 233
+randomSeed = 233
 imageTotal = 18000
 
 
-trainEpochs = 2
+trainEpochs = 600
 learningRate = 1e-4
 trainProportion = 0.7
 initialMomentum = 0.9
 weightDecay = 1e-4
 
 
-needTrain = True
-needCuda = False
-needPredict = not needTrain
-newModel = True
+needCuda = True
+newModel = False
 
+
+def setSeed(seed=randomSeed):
+    random.seed(seed)
+    numpy.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)

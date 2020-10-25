@@ -20,9 +20,6 @@ def startTrain():
         net.cuda()
 
     criterion = nn.CrossEntropyLoss()
-
-
-
     # optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
     optm = torch.optim.Adam(net.parameters(), lr=learningRate)
     oneTotal = imageTotal / trainBatch
@@ -30,10 +27,8 @@ def startTrain():
 
     print('start training!')
     for i in range(trainEpochs):
-        if i % oneTotal == 0:
-            data.shuffle()
-
-        trainData, trainLabel, validData, validLabel = data.nextTrainValid()
+        trainData, trainLabel = data.nextTrain()
+        validData, validLabel = data.nextValid()
         if needCuda:
             x = torch.from_numpy(trainData).float().cuda()
             y = torch.from_numpy(trainLabel).long().cuda()
@@ -63,9 +58,9 @@ def startTrain():
         '''
         nowLoss += loss.item()
         nowAccu += accu
-        if (i + 1) % (oneTotal / 2) == 0:
-            torch.save(net, join('savedModel', 'loss' + str(int(nowLoss)) + '_accu' + str(int(nowAccu)) + '.pkl'))
-            print(str(int(nowLoss)) + '_' + str(int(nowAccu)) + '_saved')
+        if (i + 1) % (oneTotal / 3) == 0:
+            torch.save(net, join('savedModel', 'loss' + str(round(nowLoss, 3)) + '_accu' + str(round(float(nowAccu), 3)) + '.pkl'))
+            print(str(round(nowLoss, 3)) + '_' + str(round(float(nowAccu), 3)) + '_saved')
             nowLoss = 0
             nowAccu = 0
 
@@ -73,4 +68,5 @@ def startTrain():
 
 
 if __name__ == '__main__':
+    setSeed()
     startTrain()

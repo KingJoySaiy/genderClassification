@@ -4,42 +4,37 @@ from dataset.readFile import *
 
 class TrainData:
     def __init__(self):
-        self.idSet, self.labelSet = getIdLabelSet()
-        self.now = 0
-        self.trainLen = int(trainBatch * trainProportion)
-        self.len = len(self.idSet)
+        # train: 1-12600, valid: 12601-18000, shuffled
+        idLabelSet = getIdLabelSet()
+        random.shuffle(idLabelSet)
+        self.trainIdLabel = idLabelSet[:int(imageTotal * trainProportion)]
+        self.validIdLabel = idLabelSet[int(imageTotal * trainProportion):]
+        self.trainLen, self.trainNow = len(self.trainIdLabel), 0
+        self.validLen, self.validNow = len(self.validIdLabel), 0
 
-    def shuffle(self):
-        newId = list(range(self.len))
-        random.shuffle(newId)
-        newIdSet = []
-        newLabelSet = []
-        for i in range(self.len):
-            newIdSet.append(self.idSet[newId[i]])
-            newLabelSet.append(self.labelSet[newId[i]])
-        self.idSet = np.array(newIdSet)
-        self.labelSet = np.array(newLabelSet)
-        self.now = 0
-
-    # train: (trainLen, 1, 200, 200) (trainLen, 1) valid:(batch - trainLen, 1, 200, 200) (batch - trainLen, 1)
-    def nextTrainValid(self):
-
-        trainData = np.zeros((self.trainLen, 3, imageH, imageW))
-        validData = np.zeros((trainBatch - self.trainLen, 3, imageH, imageW))
-
+    # train: (trainBatch, 3, 224, 224) (trainBatch)
+    def nextTrain(self):
+        trainData = np.zeros((trainBatch, 3, imageH, imageW))
+        trainLabel = np.zeros(trainBatch)
         ct = 0
-        for i in self.idSet[self.now:self.now + self.trainLen]:
-            trainData[ct] = readImage(join(trainImage, str(i) + '.jpg'))
+        for name, label in self.trainIdLabel[self.trainNow:self.trainNow + trainBatch]:
+            trainData[ct] = readImage(join(trainImage, str(name) + '.jpg'))
+            trainLabel[ct] = label
             ct += 1
-        ct = 0
-        for i in self.idSet[self.now + self.trainLen:self.now + trainBatch]:
-            validData[ct] = readImageInitial(join(trainImage, str(i) + '.jpg'))
-            ct += 1
+        self.trainNow = ((self.trainNow + trainBatch) if (self.trainNow + 2 * trainBatch < self.trainLen) else 0)
+        return trainData, trainLabel
 
-        res = trainData, self.labelSet[self.now:self.now + self.trainLen], validData, self.labelSet[
-                                                                                      self.now + self.trainLen:self.now + trainBatch]
-        self.now = (self.now + trainBatch) % self.len
-        return res
+    # # valid:(validBatch, 3, 224, 224) (validBatch)
+    def nextValid(self):
+        validData = np.zeros((validBatch, 3, imageH, imageW))
+        validLabel = np.zeros(validBatch)
+        ct = 0
+        for name, label in self.validIdLabel[self.validNow:self.validNow + validBatch]:
+            validData[ct] = readImage(join(trainImage, str(name) + '.jpg'))
+            validLabel[ct] = label
+            ct += 1
+        self.validNow = ((self.validNow + validBatch) if (self.validNow + 2 * validBatch < self.validLen) else 0)
+        return validData, validLabel
 
 
 class TestData:
