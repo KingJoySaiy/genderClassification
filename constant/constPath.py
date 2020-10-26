@@ -32,7 +32,7 @@ imageTotal = 18000
 
 
 trainEpochs = 600
-learningRate = 1e-4
+learningRate = 1e-6
 trainProportion = 0.7
 initialMomentum = 0.9
 weightDecay = 1e-4
