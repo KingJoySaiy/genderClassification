@@ -10,7 +10,7 @@ def readImage(path):
         transform = torchvision.transforms.Compose([
             torchvision.transforms.Resize(256),
             torchvision.transforms.RandomCrop(imageH),
-            torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5),
+            torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.1, hue=0.1),
             torchvision.transforms.RandomHorizontalFlip(0.5),
             torchvision.transforms.RandomRotation(degrees=10),
             torchvision.transforms.ToTensor(),

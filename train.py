@@ -14,13 +14,12 @@ def test(pred, lab):
 
 def startTrain():
     data = TrainData()
-    # net = ResNet50 if newModel else torch.load(modelPath)
-    net = models.resnet50(pretrained=True) if newModel else torch.load(modelPath)
+    net = ResNet50 if newModel else torch.load(modelPath)
+    # net = models.resnet50(pretrained=True) if newModel else torch.load(modelPath)
     if needCuda:
         net.cuda()
 
     criterion = nn.CrossEntropyLoss()
-    # optm = torch.optim.SGD(net.parameters(), momentum=initialMomentum, lr=learningRate, weight_decay=weightDecay)
     optm = torch.optim.Adam(net.parameters(), lr=learningRate)
     oneTotal = imageTotal / trainBatch
     nowLoss, nowAccu = 0, 0
@@ -58,7 +57,7 @@ def startTrain():
         '''
         nowLoss += loss.item()
         nowAccu += accu
-        if (i + 1) % (oneTotal / 3) == 0:
+        if (i + 1) % (oneTotal / 10) == 0:
             torch.save(net, join('savedModel', 'loss' + str(round(nowLoss, 3)) + '_accu' + str(round(float(nowAccu), 3)) + '.pkl'))
             print(str(round(nowLoss, 3)) + '_' + str(round(float(nowAccu), 3)) + '_saved')
             nowLoss = 0
