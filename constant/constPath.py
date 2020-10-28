@@ -2,43 +2,35 @@ from os.path import join
 import random
 import numpy
 import torch
-
 '''
-# for windows laptop
+# for laptop
 rootPath = 'jiangnan2020_Simple'
-trainBatch = 5
-validBatch = 5
-predictBatch = 5
+trainBatch = 3
+testBatch = 3
 '''
-# for linux server
+# for server
 rootPath = 'jiangnan2020'
-trainBatch = 60
-validBatch = 10
-predictBatch = 40
+trainBatch = 70
+testBatch = 40
 
 
+# constant (not need to change)
 trainImage = join(rootPath, 'train', 'train')
 testImage = join(rootPath, 'test', 'test')
 trainCSV = join(rootPath, 'train.csv')
 testCSV = join(rootPath, 'test.csv')
 submitCSV = join(rootPath, 'submit.csv')
 modelPath = join('savedModel', 'ResNet50.pkl')
-
-
 imageW = 224
 imageH = 224
-randomSeed = 233
-imageTotal = 18000
-
-
-trainEpochs = 600
-learningRate = 1e-6
-trainProportion = 0.7
-initialMomentum = 0.9
-weightDecay = 1e-4
-
-
+trainSize = 18000
 needCuda = True
+
+# need to change during training
+randomSeed = 1998  # 1 model -> 1 seed
+learningRate = 1e-8  # 1e-3 ~ 1e-8 , each for 1000 epoch (3-5 saveEpoch, 6-8 loss)
+saveModelEpoch = 100
+trainEpochs = 1028
 newModel = False
 
 
