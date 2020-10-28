@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from dataset.dataLoader import TrainData
 from constant.constPath import *
@@ -14,30 +13,23 @@ def test(pred, lab):
 
 def startTrain():
     data = TrainData()
-    net = ResNet50 if newModel else torch.load(modelPath)
-    # net = models.resnet50(pretrained=True) if newModel else torch.load(modelPath)
+    # net = ResNet50 if newModel else torch.load(modelPath)
+    net = models.resnet50(pretrained=True) if newModel else torch.load(modelPath)
     if needCuda:
         net.cuda()
 
     criterion = nn.CrossEntropyLoss()
     optm = torch.optim.Adam(net.parameters(), lr=learningRate)
-    oneTotal = imageTotal / trainBatch
-    nowLoss, nowAccu = 0, 0
 
     print('start training!')
     for i in range(trainEpochs):
         trainData, trainLabel = data.nextTrain()
-        validData, validLabel = data.nextValid()
         if needCuda:
             x = torch.from_numpy(trainData).float().cuda()
             y = torch.from_numpy(trainLabel).long().cuda()
-            test_in = torch.from_numpy(validData).float().cuda()
-            test_l = torch.from_numpy(validLabel).long().cuda()
         else:
             x = torch.from_numpy(trainData).float()
             y = torch.from_numpy(trainLabel).long()
-            test_in = torch.from_numpy(validData).float()
-            test_l = torch.from_numpy(validLabel).long()
 
         net.train()
         y_hat = net(x)
@@ -45,23 +37,26 @@ def startTrain():
         optm.zero_grad()
         loss.backward()
         optm.step()
+        print("Epoch:{}, Loss:{:.4f}".format(i + 1, loss.item()))
 
-        net.eval()
-        test_out = net(test_in)
-        accu = test(test_out, test_l)
-        print("Epoch:{},Loss:{:.4f},Accuracy:{:.2f}".format(i + 1, loss.item(), accu))
-        '''
-        if loss.item() < 0.04:
-            torch.save(net, join('savedModel', 'savedModel-1.pkl'))
-            sys.exit(0)
-        '''
-        nowLoss += loss.item()
-        nowAccu += accu
-        if (i + 1) % (oneTotal / 10) == 0:
-            torch.save(net, join('savedModel', 'loss' + str(round(nowLoss, 3)) + '_accu' + str(round(float(nowAccu), 3)) + '.pkl'))
-            print(str(round(nowLoss, 3)) + '_' + str(round(float(nowAccu), 3)) + '_saved')
-            nowLoss = 0
-            nowAccu = 0
+        if (i + 1) % saveModelEpoch == 0:
+            net.eval()
+            accuracySum = 0
+            validData, validLabel = data.nextValid()
+            while validData is not None:
+                if needCuda:
+                    testIn = torch.from_numpy(validData).float().cuda()
+                    testLab = torch.from_numpy(validLabel).long().cuda()
+                else:
+                    testIn = torch.from_numpy(validData).float()
+                    testLab = torch.from_numpy(validLabel).long()
+
+                accuracySum += test(net(testIn), testLab)
+                validData, validLabel = data.nextValid()
+
+            print("Accuracy:{:.4f}".format(accuracySum))
+            modelName = "Loss{:.4f}_Accu{:.4f}.pkl".format(round(loss.item(), 3), round(float(accuracySum), 3))
+            torch.save(net, join('savedModel', modelName))
 
     torch.save(net, modelPath)
 

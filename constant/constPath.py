@@ -3,41 +3,35 @@ import random
 import numpy
 import torch
 
-'''
 # for windows laptop
 rootPath = 'jiangnan2020_Simple'
-trainBatch = 5
-validBatch = 5
-predictBatch = 5
+trainBatch = 3
+testBatch = 3
 '''
 # for linux server
 rootPath = 'jiangnan2020'
 trainBatch = 60
-validBatch = 12
-predictBatch = 40
+testBatch = 40
+'''
 
-
+# constant (not need to change)
 trainImage = join(rootPath, 'train', 'train')
 testImage = join(rootPath, 'test', 'test')
 trainCSV = join(rootPath, 'train.csv')
 testCSV = join(rootPath, 'test.csv')
 submitCSV = join(rootPath, 'submit.csv')
 modelPath = join('savedModel', 'ResNet50.pkl')
-
-
 imageW = 224
 imageH = 224
-randomSeed = 996
-imageTotal = 18000
+trainSize = 17000
+needCuda = False
 
-
-trainEpochs = 600
-learningRate = 1e-6
-trainProportion = 0.7
-
-
-needCuda = True
-newModel = False
+# need to change during training
+randomSeed = 996  # 1 model -> 1 seed
+learningRate = 1e-3  # 1e-3 ~ 1e-6
+saveModelEpoch = 50  # 100, 50, 30
+trainEpochs = 3
+newModel = True
 
 
 def setSeed(seed=randomSeed):

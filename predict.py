@@ -1,4 +1,4 @@
-from dataset.dataLoader import *
+from dataset.dataLoader import TestData
 from constant.constPath import *
 import csv
 import torch
@@ -16,7 +16,7 @@ def startPredict(modelName):
         writer.writerow(['id', 'label'])
 
         ct = 0
-        all = 5708 // predictBatch
+        all = 5708 // testBatch
         testData, id = data.nextTest()
         while testData is not None:
             print('predict Epoch: ', ct, '/', all)
