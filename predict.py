@@ -32,4 +32,5 @@ def startPredict(modelName):
 
 if __name__ == '__main__':
     setSeed()
+    # default is savedModel/model-1.pkl
     startPredict('model-1') if len(sys.argv) == 1 else startPredict(sys.argv[1])

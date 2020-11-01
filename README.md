@@ -7,8 +7,9 @@ Implementation of face-gender-classification by ResNet-50 (machine learning).
 ## 1. Requirement
 
 * Python 3.7
-* torch1.0.0
-* torchvision0.2.2
+* CUDA 10.0
+* torch 1.2.0
+* torchvision 0.4.0
 
 ## 2. data
 
@@ -24,4 +25,8 @@ Implementation of face-gender-classification by ResNet-50 (machine learning).
 1. set some constants in `genderClassification/constant/constPath`
 2. run `python train.py`, model will be saved in `genderClassification/savedModel`
 3. run `python predict.py [name of savedModel]`, default is `model-1.pkl`
+4. definition of some net in 'genderClassification/myModel' is usless now
 
+MIT License
+
+Copyright (c) 2020 KingJoySaiy 

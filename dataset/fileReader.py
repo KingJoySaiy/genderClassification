@@ -33,7 +33,7 @@ class fileReader:
             return im.reshape((3, imageH, imageW))  # (3, 224, 224)
 
     @staticmethod
-    def getIdLabelSet():
+    def getIdLabelSet():    # get (id, label) in training set
         idLabel = []
         with open(trainCSV, 'r') as f:
             reader = csv.reader(f)
@@ -43,7 +43,7 @@ class fileReader:
         return idLabel
 
     @staticmethod
-    def getIdSet():
+    def getIdSet():     # get (id) in testing set
         testId = []
         with open(testCSV, 'r') as f:
             reader = csv.reader(f)

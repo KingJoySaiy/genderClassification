@@ -1,6 +1,8 @@
 import torch.nn as nn
 
 
+# final Edition: ResNet-50 (up to 92.957%)
+
 def Conv1(in_planes, places, stride=2):
     return nn.Sequential(
         nn.Conv2d(in_channels=in_planes, out_channels=places, kernel_size=7, stride=stride, padding=3, bias=False),

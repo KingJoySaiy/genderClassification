@@ -4,7 +4,7 @@ import torch.nn as nn
 imageSize = 200 * 200
 
 
-# 1st Edition: Linear Regression (up to 78.661%)
+# 1st Edition: Logistic Regression (up to 78.661%)
 
 class LR(nn.Module):
     def __init__(self):

@@ -35,7 +35,7 @@ class TrainData:
         validLabel = np.zeros(nowLen)
         ct = 0
         for name, label in self.validIdLabel[self.validNow:self.validNow + nowLen]:
-            validData[ct] = fileReader.readImage(join(trainImage, str(name) + '.jpg'))
+            validData[ct] = fileReader.readImageInitial(join(trainImage, str(name) + '.jpg'))
             validLabel[ct] = label
             ct += 1
         res = validData, validLabel

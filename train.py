@@ -5,14 +5,14 @@ from os.path import join
 from torchvision import models
 
 
-def test(pred, lab):
+def test(pred, lab):    # get accuracy (of 500)
     t = pred.max(-1)[1] == lab
     return torch.sum(t.float())
 
 
 def startTrain():
     data = TrainData()
-    # net = ResNet50 if newModel else torch.load(modelPath)
+    # net = ResNet50 if newModel else torch.load(modelPath)     # initial edition
     net = models.resnet50(pretrained=True) if newModel else torch.load(modelPath)
     if needCuda:
         net.cuda()
@@ -30,6 +30,7 @@ def startTrain():
             x = torch.from_numpy(trainData).float()
             y = torch.from_numpy(trainLabel).long()
 
+        # start training
         net.train()
         y_hat = net(x)
         loss = criterion(y_hat, y)
@@ -38,9 +39,8 @@ def startTrain():
         optm.step()
         print("Epoch:{}, Loss:{:.4f}".format(i + 1, loss.item()))
 
-        # if (i + 1) % saveModelEpoch == 0:
-        if loss.item() < 0.035:
-            '''
+        # start validating
+        if (i + 1) % saveModelEpoch == 0 or loss.item() < miniLoss:
             net.eval()
             accuracySum = 0
             validData, validLabel = data.nextValid()
@@ -57,8 +57,6 @@ def startTrain():
 
             print("Accuracy:{:.0f}".format(accuracySum))
             modelName = "Loss{:.4f}_Accu{:.0f}.pkl".format(round(loss.item(), 3), round(float(accuracySum), 3))
-            '''
-            modelName = "Loss:{:.6f}.pkl".format(round(loss.item(), 6))
             torch.save(net, join('savedModel', modelName))
 
     torch.save(net, modelPath)
