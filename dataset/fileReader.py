@@ -12,15 +12,9 @@ class fileReader:
             transform = torchvision.transforms.Compose([
                 torchvision.transforms.Resize(256),
                 torchvision.transforms.RandomCrop(imageH),
-<<<<<<< HEAD
-                torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.1, hue=0.1),
-                torchvision.transforms.RandomHorizontalFlip(0.5),
-                torchvision.transforms.RandomRotation(degrees=10),
-=======
                 torchvision.transforms.ColorJitter(brightness=0.5, contrast=0.5, saturation=0.2, hue=0.2),
                 torchvision.transforms.RandomHorizontalFlip(0.5),
                 torchvision.transforms.RandomRotation(degrees=12),
->>>>>>> 23184e77f6e3d037defd9ce5d283c910950dea85
                 torchvision.transforms.ToTensor(),
                 torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
             ])
